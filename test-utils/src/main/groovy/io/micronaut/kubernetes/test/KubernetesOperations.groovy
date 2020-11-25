@@ -65,9 +65,13 @@ class KubernetesOperations implements Closeable {
     boolean deleteNamespace(String name) {
         log.debug("Deleting namespace ${name}")
         getClient().namespaces().delete(getNamespace(name))
-        new PollingConditions(delay: 1).within(120) {
+        new PollingConditions(delay: 10).within(300) {
             assert getClient().namespaces().withName(name).get() == null
         }
+        if(getClient().namespaces().withName(name).get()){
+            throw new Exception("Failed to delete namespace $name")
+        }
+        return true
     }
 
     Role createRole(String name,
@@ -177,13 +181,10 @@ class KubernetesOperations implements Closeable {
         return getClient(namespace).pods().inNamespace(namespace).list().items
     }
 
-<<<<<<< Updated upstream
-=======
     Pod getPod(String name, String namespace){
         return getClient(namespace).pods().inNamespace(namespace).withName(name).get()
     }
 
->>>>>>> Stashed changes
     Secret createSecret(String name, String namespace, Map<String, String> literals, Map<String, String> labels = [:]) {
         Secret secret = new SecretBuilder()
                 .withNewMetadata()
